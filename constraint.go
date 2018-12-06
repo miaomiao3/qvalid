@@ -1,8 +1,8 @@
 package qvalid
 
 import (
+	"errors"
 	"fmt"
-	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 	"reflect"
 	"regexp"
@@ -49,6 +49,7 @@ func (c *Constraint) checkBoundLimit(value float64, isLength bool) (bool, error)
 			}
 		}
 	}
+
 	if c.Lte != nil {
 		if value <= *c.Lte {
 			upperLimitPass = true
@@ -84,7 +85,6 @@ func (c *Constraint) checkBoundLimit(value float64, isLength bool) (bool, error)
 		} else {
 			return true, nil
 		}
-
 	case !upperLimitPass && !lowLimitPass:
 		// check if has limit
 		if c.hasBoundLimit() {
@@ -93,7 +93,7 @@ func (c *Constraint) checkBoundLimit(value float64, isLength bool) (bool, error)
 			return true, nil
 		}
 	}
-	return false, errors.Errorf("not expected")
+	return false, errors.New("not expected")
 
 }
 
@@ -116,6 +116,26 @@ func (c *Constraint) hasUpperBoundLimit() bool {
 		return true
 	}
 	return false
+}
+
+func (c *Constraint) getLowBoundLimit() float64 {
+	if c.Gt != nil {
+		return *c.Gt
+	}
+	if c.Gte != nil {
+		return *c.Gte
+	}
+	return 0
+}
+
+func (c *Constraint) getUpperBoundLimit() float64 {
+	if c.Lt != nil {
+		return *c.Lt
+	}
+	if c.Lte != nil {
+		return *c.Lte
+	}
+	return 0
 }
 
 // for map string slice array, check length
@@ -141,14 +161,14 @@ func (c *Constraint) checkValue(path string, v reflect.Value, t reflect.StructFi
 					if !isMatch {
 						return false, &ValidError{
 							Field: path + getTagName(t),
-							Msg:   fmt.Sprintf("value:%s not match attr:%s", value, *c.Attr),
+							Msg:   fmt.Sprintf("value:%s not match attribute:%s", value, *c.Attr),
 						}
 					}
 				}
 			}
 
 			if len(c.In) > 0 {
-				if !IsInStringSlice(value, c.In) {
+				if !isInStringSlice(value, c.In) {
 					return false, &ValidError{
 						Field: path + getTagName(t),
 						Msg:   fmt.Sprintf("value:%s not in:%v", value, c.In),
@@ -169,7 +189,7 @@ func (c *Constraint) checkValue(path string, v reflect.Value, t reflect.StructFi
 		}
 		value := fmt.Sprintf("%v", v)
 		if len(c.In) > 0 {
-			if !IsInStringSlice(value, c.In) {
+			if !isInStringSlice(value, c.In) {
 				return false, &ValidError{
 					Field: path + getTagName(t),
 					Msg:   fmt.Sprintf("value:%s not in:%v", value, c.In),
@@ -212,10 +232,9 @@ type Constraint struct {
 	Suffix *string  `yaml:"suffix"`
 	Regex  *string  `yaml:"regex"`
 	Attr   *string  `yaml:"attr"`
-	Custom *string  `yaml:"custom"`
 }
 
-var bracketMarkRegex = `\[[a-zA-Z, ]+\]`
+var bracketMarkRegex = `\[[a-zA-Z1-9-, ]+\]`
 var bracketHolder = `bholder1xx`
 var yamlTag = `: `
 
@@ -223,7 +242,7 @@ var yamlTag = `: `
 func GetConstraintFromTag(tag string) (*Constraint, error) {
 	c := Constraint{}
 
-	// get square bracket content
+	// get square bracket content of 'in'
 	reg := regexp.MustCompile(bracketMarkRegex)
 	squareBracketContent := reg.FindString(tag)
 
@@ -236,6 +255,7 @@ func GetConstraintFromTag(tag string) (*Constraint, error) {
 		trimTransformData += strings.Trim(v, " ") + "\n"
 	}
 
+	// fill back
 	trimTransformData = strings.Replace(trimTransformData, bracketHolder, squareBracketContent, 1)
 
 	trimTransformData = strings.Replace(trimTransformData, "=", yamlTag, -1)
@@ -249,6 +269,12 @@ func GetConstraintFromTag(tag string) (*Constraint, error) {
 		return nil, errors.New("gt and gt can't both set")
 	}
 
+	if c.hasLowBoundLimit() && c.hasUpperBoundLimit() {
+		if c.getLowBoundLimit() >= c.getUpperBoundLimit() {
+			return nil, errors.New("upper and lower bound limit illegal")
+		}
+	}
+
 	if c.hasBoundLimit() && len(c.In) > 1 {
 		return nil, errors.New("bound limit and 'in' can't both set")
 	}
@@ -256,7 +282,7 @@ func GetConstraintFromTag(tag string) (*Constraint, error) {
 	return &c, err
 }
 
-func IsInStringSlice(s string, data []string) bool {
+func isInStringSlice(s string, data []string) bool {
 	for _, v := range data {
 		if v == s {
 			return true

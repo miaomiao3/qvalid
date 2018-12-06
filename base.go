@@ -29,35 +29,11 @@ const (
 	URLSubdomain   string = `((www\.)|([a-zA-Z0-9]+([-_\.]?[a-zA-Z0-9])*[a-zA-Z0-9]\.[a-zA-Z0-9]+))`
 	URL            string = `^` + URLSchema + `?` + URLUsername + `?` + `((` + URLIP + `|(\[` + IP + `\])|(([a-zA-Z0-9]([a-zA-Z0-9-_]+)?[a-zA-Z0-9]([-\.][a-zA-Z0-9]+)*)|(` + URLSubdomain + `?))?(([a-zA-Z\x{00a1}-\x{ffff}0-9]+-?-?)*[a-zA-Z\x{00a1}-\x{ffff}0-9]+)(?:\.([a-zA-Z\x{00a1}-\x{ffff}]{1,}))?))\.?` + URLPort + `?` + URLPath + `?$`
 	Semver         string = "^v?(?:0|[1-9]\\d*)\\.(?:0|[1-9]\\d*)\\.(?:0|[1-9]\\d*)(-(0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(\\.(0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*)?(\\+[0-9a-zA-Z-]+(\\.[0-9a-zA-Z-]+)*)?$"
-
-	validTag string = "valid"
-
-	validTagFormat = `^\([ 0-9+,]+\)[ ,a-z_]*$`
-	validLenFormat = `^\([ 0-9+,]+\)`
 )
 
-type QValidator struct {
-	constraint Constraint
-}
-
-
-// 希望通过一个tag就可以验证字符格式
-// 如int/float： `valid:"gte=0,lt=20,attr=email"` 数字默认是大小,标识大于0， 小于90
-// 如string： `valid:"gte=0,lt=20,attr=email"` 字符默认是长度，单位是字节
-// 如string： `valid:"(0+,10)", in=[......]"` 字符默认是长度，单位是字节
-// 如string： `valid:"(0+,10)", prefix="" "` 字符默认是长度，单位是字节, 正则
-// 如string： `valid:"(0+,10)", suffix="" "` 字符默认是长度，单位是字节, 正则
-// 如string： `valid:"(0+,10)", regex="" "` 字符默认是长度，单位是字节, 正则
-// 如string/slice/map： `valid:"(0+,10)"` 字符串默认是长度
-// 特别地，支持正则和in操作
-
-// 支持struct 遍历
-// 支持自定义注册
-
-//const (
-//	CompareLittle  = "lt"
-//	CompareGreater = "gt"
-//)
+const (
+	validTag string = "valid"
+)
 
 const (
 	StringTypeEmail        = "email"

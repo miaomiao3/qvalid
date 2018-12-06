@@ -12,7 +12,7 @@ func TestGetConstraintFromTag(t *testing.T) {
 		_, err := GetConstraintFromTag(originErrData)
 		So(err, ShouldNotBeNil)
 
-		var originData = `lt=5, gt=1, attr=email, in=[a,b]`
+		var originData = `lt=5, gt=1, attr=email`
 		c, err := GetConstraintFromTag(originData)
 		So(err, ShouldEqual, nil)
 
@@ -25,7 +25,7 @@ func TestGetConstraintFromTag(t *testing.T) {
 			Convey("lt=5, gt=1 test value=2", func() {
 				i = 2
 				value = reflect.ValueOf(i)
-				isPass, err := c.checkBoundLimit(float64(value.Int()))
+				isPass, err := c.checkBoundLimit(float64(value.Int()), false)
 				So(err, ShouldBeNil)
 				So(isPass, ShouldEqual, true)
 			})
@@ -33,7 +33,7 @@ func TestGetConstraintFromTag(t *testing.T) {
 			Convey("lt=5, gt=1 test value=1", func() {
 				i = 1
 				value = reflect.ValueOf(i)
-				isPass, err = c.checkBoundLimit(float64(value.Int()))
+				isPass, err = c.checkBoundLimit(float64(value.Int()), false)
 				So(err, ShouldNotBeNil)
 				So(isPass, ShouldEqual, false)
 			})
@@ -41,19 +41,19 @@ func TestGetConstraintFromTag(t *testing.T) {
 			Convey("lt=5, gt=1 test value=5", func() {
 				i = 5
 				value = reflect.ValueOf(i)
-				isPass, err = c.checkBoundLimit(float64(value.Int()))
+				isPass, err = c.checkBoundLimit(float64(value.Int()), false)
 				So(err, ShouldNotBeNil)
 				So(isPass, ShouldEqual, false)
 			})
 
-			originData = `lte=5, gte=1, attr=email, in=[a,b]`
+			originData = `lte=5, gte=1, attr=email`
 			c, err = GetConstraintFromTag(originData)
 			So(err, ShouldEqual, nil)
 
 			Convey("lte=5, gte=1 test value=1", func() {
 				i = 1
 				value = reflect.ValueOf(i)
-				isPass, err = c.checkBoundLimit(float64(value.Int()))
+				isPass, err = c.checkBoundLimit(float64(value.Int()), false)
 				So(err, ShouldBeNil)
 				So(isPass, ShouldEqual, true)
 			})
@@ -61,19 +61,19 @@ func TestGetConstraintFromTag(t *testing.T) {
 			Convey("lte=5, gte=1 test value=5", func() {
 				i = 5
 				value = reflect.ValueOf(i)
-				isPass, err = c.checkBoundLimit(float64(value.Int()))
+				isPass, err = c.checkBoundLimit(float64(value.Int()), false)
 				So(err, ShouldBeNil)
 				So(isPass, ShouldEqual, true)
 			})
 
-			originData = `lte=5, gt=1, attr=email, in=[a,b]`
+			originData = `lte=5, gt=1, attr=email`
 			c, err = GetConstraintFromTag(originData)
 			So(err, ShouldEqual, nil)
 
 			Convey("lte=5, gt=1 test value=1", func() {
 				i = 1
 				value = reflect.ValueOf(i)
-				isPass, err = c.checkBoundLimit(float64(value.Int()))
+				isPass, err = c.checkBoundLimit(float64(value.Int()), false)
 				So(err, ShouldNotBeNil)
 				So(isPass, ShouldEqual, false)
 			})
@@ -81,7 +81,7 @@ func TestGetConstraintFromTag(t *testing.T) {
 			Convey("lte=5, gt=1 test value=5", func() {
 				i = 5
 				value = reflect.ValueOf(i)
-				isPass, err = c.checkBoundLimit(float64(value.Int()))
+				isPass, err = c.checkBoundLimit(float64(value.Int()), false)
 				So(err, ShouldBeNil)
 				So(isPass, ShouldEqual, true)
 			})
@@ -95,7 +95,7 @@ func TestGetConstraintFromTag(t *testing.T) {
 			Convey("lt=5, gt=1 test value=ab", func() {
 				str = "ab"
 				value = reflect.ValueOf(str)
-				isPass, err := c.checkBoundLimit(float64(value.Len()))
+				isPass, err := c.checkBoundLimit(float64(value.Len()), true)
 				So(err, ShouldBeNil)
 				So(isPass, ShouldEqual, true)
 			})
@@ -103,7 +103,7 @@ func TestGetConstraintFromTag(t *testing.T) {
 			Convey("lt=5, gt=1 test value=a", func() {
 				str = "a"
 				value = reflect.ValueOf(str)
-				isPass, err = c.checkBoundLimit(float64(value.Len()))
+				isPass, err = c.checkBoundLimit(float64(value.Len()), true)
 				So(err, ShouldNotBeNil)
 				So(isPass, ShouldEqual, false)
 			})
@@ -111,19 +111,19 @@ func TestGetConstraintFromTag(t *testing.T) {
 			Convey("lt=5, gt=1 test value=abcde", func() {
 				str = "abcde"
 				value = reflect.ValueOf(str)
-				isPass, err = c.checkBoundLimit(float64(value.Len()))
+				isPass, err = c.checkBoundLimit(float64(value.Len()), true)
 				So(err, ShouldNotBeNil)
 				So(isPass, ShouldEqual, false)
 			})
 
-			originData = `lte=5, gte=1, attr=email, in=[a,b]`
+			originData = `attr=email, in=[a,b]`
 			c, err = GetConstraintFromTag(originData)
 			So(err, ShouldEqual, nil)
 
 			Convey("lte=5, gte=1 test value=a", func() {
 				str = "a"
 				value = reflect.ValueOf(str)
-				isPass, err = c.checkBoundLimit(float64(value.Len()))
+				isPass, err = c.checkBoundLimit(float64(value.Len()), true)
 				So(err, ShouldBeNil)
 				So(isPass, ShouldEqual, true)
 			})
@@ -131,19 +131,19 @@ func TestGetConstraintFromTag(t *testing.T) {
 			Convey("lte=5, gte=1 test value=abcde", func() {
 				str = "abcde"
 				value = reflect.ValueOf(str)
-				isPass, err = c.checkBoundLimit(float64(value.Len()))
+				isPass, err = c.checkBoundLimit(float64(value.Len()), true)
 				So(err, ShouldBeNil)
 				So(isPass, ShouldEqual, true)
 			})
 
-			originData = `lte=5, gt=1, attr=email, in=[a,b]`
+			originData = `lte=5, gt=1, attr=email`
 			c, err = GetConstraintFromTag(originData)
 			So(err, ShouldEqual, nil)
 
 			Convey("lte=5, gt=1 test value=a", func() {
 				str = "a"
 				value = reflect.ValueOf(str)
-				isPass, err = c.checkBoundLimit(float64(value.Len()))
+				isPass, err = c.checkBoundLimit(float64(value.Len()), true)
 				So(err, ShouldNotBeNil)
 				So(isPass, ShouldEqual, false)
 			})
@@ -151,7 +151,7 @@ func TestGetConstraintFromTag(t *testing.T) {
 			Convey("lte=5, gt=1 test value=abcde", func() {
 				str = "abcde"
 				value = reflect.ValueOf(str)
-				isPass, err = c.checkBoundLimit(float64(value.Len()))
+				isPass, err = c.checkBoundLimit(float64(value.Len()), true)
 				So(err, ShouldBeNil)
 				So(isPass, ShouldEqual, true)
 			})

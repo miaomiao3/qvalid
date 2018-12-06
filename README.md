@@ -17,9 +17,10 @@ go get -u github.com/miaomiao3/qvalid
 
 ## Syntax
 
-As for bound limit, it means length of string/array/slice/map, and value of numbers(int/uint/float...)
-If 'in' was set, do not set bound limit  
-Comma `'` was reserved except of `in` property
+### rule 
+1. As for bound limit, it means length of string/array/slice/map, and value of numbers(int/uint/float...)
+2. If 'in' was set, do not set bound limit  
+3. Comma `'` was reserved except of `in` property
 
 |prpp|des|comment|
 |---|---|---|
@@ -27,63 +28,115 @@ Comma `'` was reserved except of `in` property
 |lte|little than or equal, upper bound limit| u can set lt **or** lte!  |
 |gt|greater than, lower bound limit| u can set gt **or** gte!  |
 |gte|greater than or equal, lower bound limit| u can set gt **or** gte!  |
-|in|must in one of list item. |If 'in' was set, do not set bound limit |
-|attr|then the field is string, it works to some known attribute like email, ip .etc|read code for more|
-|custom|customize callback, must be unique in one struct|read code for more|
+|in|must in one of the list item. item character must be numeric or alpha|If 'in' was set, do not set bound limit |
+|attr|when the field is string, it works to some known attribute like email, ip .etc|read code for more|
 
 
+### supported string attrs as follows, read code more:
+```go
+const (
+	StringTypeEmail        = "email"
+	StringTypeAlpha        = "alpha"
+	StringTypeUpperAlpha   = "upper_alpha"
+	StringTypeLowerAlpha   = "lower_alpha"
+	StringTypeAlphaNumeric = "alpha_numeric"
+	StringTypeNumeric      = "numeric"
+	StringTypeInt          = "int"
+	StringTypeFloat        = "float"
+	StringTypeHex          = "hex"
+	StringTypeAscii        = "ascii"
+	StringTypeVisibleAscii = "visible_ascii"
+	StringTypeBytes        = "bytes"
+	StringTypeBase64       = "base64"
+	StringTypeDNS          = "dns"
+	StringTypeVersion      = "version"
+	StringTypeIp           = "ip"
+	StringTypePort         = "port"
+	StringTypeURL          = "url"
+)
+```
 
 
 ## Examples
 First, define some struct:
 ```go
 
-type Person struct {
-	Name          string   `json:"name" valid:"lt=10, gt=1"`
-	from          string   `json:"from" valid:"lt=10, gt=1"` // unexported, will be ignore
-	Age           int      `json:"age" valid:"lt=30, gt=20"`
-	AddrSyntaxErr string   `valid:"lt=10, gt=1, in=[aa,bb]"` // this will cause [qvalid] error msg
-	Addr          string   `valid:"in=[aa,bb]"`
-	Email         string   `valid:"attr=email"`
-	Weight        int      `valid:"lt=10, gt=1"`
-	Nicks         []string `valid:"lt=5, gt=1"`
-	Food          Food
-	PFood         *Food
-	Foods         []Food `json:"foods"  valid:"gt=1"`
+type Dog struct {
+	Name      string            `valid:"in=[rose,tulip]" json:"name"`
+	Color     string            `valid:"lt=5, gte=3" json:"color"`
+	Weight    float64           `valid:"lt=100, gte=10" json:"weight"`
+	Clothes   int               `valid:"in=[1,3,5]" json:"clothes"`
+	NickNames []string          `valid:"lt=5, gt=1"`
+	Relations map[string]string `valid:"lt=5, gt=1"`
+	Email     string            `valid:"attr=email"`
+	from      string            `json:"from" valid:"lt=10, gt=1"` // unexported, will be ignored by qvalid
+}
+
+type BadTag struct {
+	Err1 string `valid:"lt=10, lte=1"`            // this will cause [qvalid] error msg
+	Err2 string `valid:"gt=10, gte=1"`            // this will cause [qvalid] error msg
+	Err3 string `valid:"lt=10, gt=1, in=[aa,bb]"` // this will cause [qvalid] error msg
+}
+
+type FakeFood struct {
+	Leaf     Leaf
+	MainLeaf *Leaf
 }
 
 type Food struct {
-	Protein string `valid:"lt=10, gt=1"`
-	Leafs   []Leaf `valid:"gte=1"`
-}
-type FakeFood struct {
-	Protein  string `valid:"lt=10, gt=1"`
-	MainLeaf Leaf   `valid:"gte=1"`
+	Leafs []Leaf `valid:"gte=1"`
 }
 
 type Leaf struct {
-	Color string `valid:"lt=5, gt=2" json:"color"`
+	Name string `valid:"in=[rose,tulip]" json:"name"`
 }
+
 
 ```
 
-### validate struct with one filed
-like Leaf
+### validate struct with simple field
+like Dog
 ```go
 
-func validate1Field() {
-	leaf := &Leaf{}
-	isPass, validErrors := qvalid.ValidateStruct(leaf)
-	fmt.Println("validate1Field isPass:%v", isPass)
-	dumpValidErrors(validErrors)
+func validateSimpleField() {
+	dog := &Dog{}
+	isPass, validErrors := qvalid.ValidateStruct(dog)
+	fmt.Println("validateSimpleField")
+	checkAndDumpValidErrors(isPass, validErrors)
+
+	newFlower := &Dog{
+		Name:      "rose",
+		Color:     "gray",
+		Weight:    30.0,
+		Clothes:   3,
+		NickNames: []string{"wangcai", "dawang"},
+		Relations: map[string]string{
+			"owner": "cy",
+			"birth": "2018",
+		},
+		Email: "google@gmail.com",
+	}
+	isPass, validErrors = qvalid.ValidateStruct(newFlower)
+	checkAndDumpValidErrors(isPass, validErrors)
 }
+
 ```
 output:
 ```sh
-validate1Field isPass:%v false
-validErrors:
-err:0 --> &{Field:.color Msg:expect length > 2 but get length: 0}
-***************
+validateSimpleField
+    illegal input and result:
+        isPass:false
+        validErrors:
+            err:0 --> &{Field:.name Msg:value: not in:[rose tulip]}
+            err:1 --> &{Field:.color Msg:expect length >= 3 but get length: 0}
+            err:2 --> &{Field:.weight Msg:expect value >= 10 but get value:0}
+            err:3 --> &{Field:.clothes Msg:value:0 not in:[1 3 5]}
+            err:4 --> &{Field:.NickNames Msg:expect length > 1 but get length: 0}
+            err:5 --> &{Field:.Relations Msg:expect length > 1 but get length: 0}
+            err:6 --> &{Field:.Email Msg:value: not match attribute:email}
+
+    legal input and result:
+        isPass:true
 
 ```
 
@@ -93,89 +146,118 @@ like FakeFood
 ```go
 
 func validateEmbedStruct() {
-	food := &FakeFood{}
+	food := &FakeFood{
+		MainLeaf: &Leaf{},
+	}
 	isPass, validErrors := qvalid.ValidateStruct(food)
-	fmt.Println("validateEmbedStruct isPass:%v", isPass)
-	dumpValidErrors(validErrors)
+	fmt.Println("validateEmbedStruct")
+	checkAndDumpValidErrors(isPass, validErrors)
+
+	newFakeFood := FakeFood{
+		Leaf: Leaf{
+			Name: "rose",
+		},
+		MainLeaf: &Leaf{
+			Name: "rose",
+		},
+	}
+	isPass, validErrors = qvalid.ValidateStruct(newFakeFood)
+	checkAndDumpValidErrors(isPass, validErrors)
 }
+
 ```
 
 output
 
 ```sh
-validateEmbedStruct isPass:%v false
-validErrors:
-err:0 --> &{Field:.Protein Msg:expect length > 1 but get length: 0}
-err:1 --> &{Field:.MainLeaf.color Msg:expect length > 2 but get length: 0}
-***************
+
+validateEmbedStruct
+    illegal input and result:
+        isPass:false
+        validErrors:
+            err:0 --> &{Field:.Leaf.name Msg:value: not in:[rose tulip]}
+            err:1 --> &{Field:.MainLeaf.name Msg:value: not in:[rose tulip]}
+
+    legal input and result:
+        isPass:true
+validateSliceEmbedStruct
+    illegal input and result:
+        isPass:false
+        validErrors:
+            err:0 --> &{Field:.Leafs[0].name Msg:value: not in:[rose tulip]}
+
+    legal input and result:
+        isPass:true
+        
 ```
 
 
 ### validate slice embedded struct
 like Food
 ```go
+
 func validateSliceEmbedStruct() {
 	food := &Food{
-		Leafs: []Leaf{
+		Leafs: []Leaf{ // if Leafs is empty, qvalid do not check empty slice field, so set 1 element to test
 			Leaf{},
 		},
 	}
 	isPass, validErrors := qvalid.ValidateStruct(food)
-	fmt.Println("validateSliceEmbedStruct isPass:%v", isPass)
-	dumpValidErrors(validErrors)
+	fmt.Println("validateSliceEmbedStruct")
+	checkAndDumpValidErrors(isPass, validErrors)
+
+	newFood := Food{
+		Leafs: []Leaf{
+			Leaf{
+				Name: "rose",
+			},
+		},
+	}
+	isPass, validErrors = qvalid.ValidateStruct(newFood)
+	checkAndDumpValidErrors(isPass, validErrors)
 }
+
 ```
 
 output
 
 ```sh
-validateSliceEmbedStruct isPass:%v false
-validErrors:
-err:0 --> &{Field:.Protein Msg:expect length > 1 but get length: 0}
-err:1 --> &{Field:.Leafs[0].color Msg:expect length > 2 but get length: 0}
-***************
+
+validateSliceEmbedStruct
+    illegal input and result:
+        isPass:false
+        validErrors:
+            err:0 --> &{Field:.Leafs[0].name Msg:value: not in:[rose tulip]}
+
+    legal input and result:
+        isPass:true
+        
 ```
 
-### mix validate
+### sample of bad tag
 like Person
 ```go
 
-func mixField() {
-	p := &Person{
-		Name: "",
-		Age:  0,
-		Food: Food{
-			Leafs: []Leaf{
-				Leaf{},
-			},
-		},
-		Foods: []Food{{Protein: ""}},
-	}
+func badTag() {
+	bad := &BadTag{}
 
-	isPass, validErrors := qvalid.ValidateStruct(p)
-	fmt.Println("mixField isPass:%v", isPass)
-	dumpValidErrors(validErrors)
+	isPass, validErrors := qvalid.ValidateStruct(bad)
+	fmt.Println("badTag")
+	checkAndDumpValidErrors(isPass, validErrors)
 }
 
 ```
 
 output
-```go
-mixField isPass:%v false
-validErrors:
-err:0 --> &{Field:.name Msg:expect length > 1 but get length: 0}
-err:1 --> &{Field:.age Msg:expect value > 20 but get value:0}
-err:2 --> &{Field:[qvalid] GetConstraintFromTag Msg:bound limit and 'in' can't both set}
-err:3 --> &{Field:.Addr Msg:value: not in:[aa bb]}
-err:4 --> &{Field:.Email Msg:value: not match attr:email}
-err:5 --> &{Field:.Weight Msg:expect value > 1 but get value:0}
-err:6 --> &{Field:.Nicks Msg:expect length > 1 but get length: 0}
-err:7 --> &{Field:.Food.Protein Msg:expect length > 1 but get length: 0}
-err:8 --> &{Field:.Food.Leafs[0].color Msg:expect length > 2 but get length: 0}
-err:9 --> &{Field:.foods Msg:expect length > 1 but get length: 1}
-err:10 --> &{Field:.foods[0].Protein Msg:expect length > 1 but get length: 0}
-err:11 --> &{Field:.foods[0].Leafs Msg:expect length >= 1 but get length: 0}
-***************
+```sh
+
+badTag
+    illegal input and result:
+        isPass:false
+        validErrors:
+            err:0 --> &{Field:[qvalid] GetConstraintFromTag Msg:lt and lte can't both set}
+            err:1 --> &{Field:[qvalid] GetConstraintFromTag Msg:gt and gt can't both set}
+            err:2 --> &{Field:[qvalid] GetConstraintFromTag Msg:bound limit and 'in' can't both set}
 
 ```
 
@@ -183,4 +265,4 @@ for more details, see example dir.
 
 ## TODO:
 1. check loop pointer check
-2. customer callback(now developing)
+2. customized field validator

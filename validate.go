@@ -45,10 +45,11 @@ func validateStruct(path string, s interface{}) (bool, []*ValidError) {
 		}
 		if (valueField.Kind() == reflect.Struct || (valueField.Kind() == reflect.Ptr && valueField.Elem().Kind() == reflect.Struct)) &&
 			typeField.Tag.Get(validTag) != "-" {
-			_, validErrs := validateStruct(newPath+getTagName(typeField), valueField.Interface())
+			isTypeValid, validErrs := validateStruct(newPath+getTagName(typeField), valueField.Interface())
 			if len(validErrs) > 0 {
 				validErrors = append(validErrors, validErrs...)
 			}
+			result = result && isTypeValid
 			continue
 		}
 

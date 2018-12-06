@@ -2,89 +2,131 @@ package main
 
 import (
 	"fmt"
-	"qvalid"
+	"github.com/miaomiao3/qvalid"
 )
 
 func main() {
-	validate1Field()
+	validateSimpleField()
 	validateEmbedStruct()
 	validateSliceEmbedStruct()
-	mixField()
+	badTag()
 }
 
-type Person struct {
-	Name          string   `json:"name" valid:"lt=10, gt=1"`
-	from          string   `json:"from" valid:"lt=10, gt=1"` // unexported, will be ignore
-	Age           int      `json:"age" valid:"lt=30, gt=20"`
-	AddrSyntaxErr string   `valid:"lt=10, gt=1, in=[aa,bb]"` // this will cause [qvalid] error msg
-	Addr          string   `valid:"in=[aa,bb]"`
-	Email         string   `valid:"attr=email"`
-	Weight        int      `valid:"lt=10, gt=1"`
-	Nicks         []string `valid:"lt=5, gt=1"`
-	Food          Food
-	PFood         *Food
-	Foods         []Food `json:"foods"  valid:"gt=1"`
+type Dog struct {
+	Name      string            `valid:"in=[rose,tulip]" json:"name"`
+	Color     string            `valid:"lt=5, gte=4" json:"color"`
+	Weight    float64           `valid:"lt=100, gte=10" json:"weight"`
+	Clothes   int               `valid:"in=[1,3,5]" json:"clothes"`
+	NickNames []string          `valid:"lt=5, gt=1"`
+	Relations map[string]string `valid:"lt=5, gt=1"`
+	Email     string            `valid:"attr=email"`
+	from      string            `json:"from" valid:"lt=10, gt=1"` // unexported, will be ignored by qvalid
+}
+
+type BadTag struct {
+	Err1 string `valid:"lt=10, lte=1"`            // this will cause [qvalid] error msg
+	Err2 string `valid:"gt=10, gte=1"`            // this will cause [qvalid] error msg
+	Err3 string `valid:"lt=10, gt=1, in=[aa,bb]"` // this will cause [qvalid] error msg
+	Err4 string `valid:"lt=1, gte=1"`             // this will cause [qvalid] error msg
+}
+
+type FakeFood struct {
+	Leaf     Leaf
+	MainLeaf *Leaf
 }
 
 type Food struct {
-	Protein string `valid:"lt=10, gt=1"`
-	Leafs   []Leaf `valid:"gte=1"`
-}
-type FakeFood struct {
-	Protein  string `valid:"lt=10, gt=1"`
-	MainLeaf Leaf   `valid:"gte=1"`
+	Leafs []Leaf `valid:"gte=1"`
 }
 
 type Leaf struct {
-	Color string `valid:"lt=5, gt=2" json:"color"`
+	Name string `valid:"in=[rose,tulip]" json:"name"`
 }
 
-func validate1Field() {
-	leaf := &Leaf{}
-	isPass, validErrors := qvalid.ValidateStruct(leaf)
-	fmt.Println("validate1Field isPass:%v", isPass)
-	dumpValidErrors(validErrors)
+func validateSimpleField() {
+	dog := &Dog{}
+	isPass, validErrors := qvalid.ValidateStruct(dog)
+	fmt.Println("validateSimpleField")
+	checkAndDumpValidErrors(isPass, validErrors)
+
+	newFlower := &Dog{
+		Name:      "rose",
+		Color:     "gray",
+		Weight:    30.0,
+		Clothes:   3,
+		NickNames: []string{"wangcai", "dawang"},
+		Relations: map[string]string{
+			"owner": "cy",
+			"birth": "2018",
+		},
+		Email: "google@gmail.com",
+	}
+	isPass, validErrors = qvalid.ValidateStruct(newFlower)
+	checkAndDumpValidErrors(isPass, validErrors)
 }
 
 func validateEmbedStruct() {
-	food := &FakeFood{}
+	food := &FakeFood{
+		MainLeaf: &Leaf{},
+	}
 	isPass, validErrors := qvalid.ValidateStruct(food)
-	fmt.Println("validateEmbedStruct isPass:%v", isPass)
-	dumpValidErrors(validErrors)
+	fmt.Println("validateEmbedStruct")
+	checkAndDumpValidErrors(isPass, validErrors)
+
+	newFakeFood := FakeFood{
+		Leaf: Leaf{
+			Name: "rose",
+		},
+		MainLeaf: &Leaf{
+			Name: "rose",
+		},
+	}
+	isPass, validErrors = qvalid.ValidateStruct(newFakeFood)
+	checkAndDumpValidErrors(isPass, validErrors)
 }
 
 func validateSliceEmbedStruct() {
 	food := &Food{
-		Leafs: []Leaf{
+		Leafs: []Leaf{ // if Leafs is empty, qvalid do not check empty slice field, so set 1 element to test
 			Leaf{},
 		},
 	}
 	isPass, validErrors := qvalid.ValidateStruct(food)
-	fmt.Println("validateSliceEmbedStruct isPass:%v", isPass)
-	dumpValidErrors(validErrors)
-}
+	fmt.Println("validateSliceEmbedStruct")
+	checkAndDumpValidErrors(isPass, validErrors)
 
-func mixField() {
-	p := &Person{
-		Name: "",
-		Age:  0,
-		Food: Food{
-			Leafs: []Leaf{
-				Leaf{},
+	newFood := Food{
+		Leafs: []Leaf{
+			Leaf{
+				Name: "rose",
 			},
 		},
-		Foods: []Food{{Protein: ""}},
 	}
-
-	isPass, validErrors := qvalid.ValidateStruct(p)
-	fmt.Println("mixField isPass:%v", isPass)
-	dumpValidErrors(validErrors)
+	isPass, validErrors = qvalid.ValidateStruct(newFood)
+	checkAndDumpValidErrors(isPass, validErrors)
 }
 
-func dumpValidErrors(validErrors []*qvalid.ValidError) {
-	fmt.Println("validErrors:")
-	for k, v := range validErrors {
-		fmt.Printf("err:%d --> %+v\n", k, v)
+func badTag() {
+	bad := &BadTag{}
+
+	isPass, validErrors := qvalid.ValidateStruct(bad)
+	fmt.Println("badTag")
+	checkAndDumpValidErrors(isPass, validErrors)
+}
+
+func checkAndDumpValidErrors(isPass bool, validErrors []*qvalid.ValidError) {
+	if !isPass {
+		fmt.Println("    illegal input and result:")
+	} else {
+		fmt.Println("    legal input and result:")
 	}
-	fmt.Println("***************")
+	fmt.Printf("        isPass:%v\n", isPass)
+	if len(validErrors) > 0 {
+		fmt.Println("        validErrors:")
+		for k, v := range validErrors {
+			fmt.Printf("            err:%d --> %+v\n", k, v)
+		}
+		fmt.Println("")
+	}
+
 }
