@@ -250,11 +250,12 @@ badTag
             err:0 --> &{Field:[qvalid] GetConstraintFromTag Msg:lt and lte can't both set}
             err:1 --> &{Field:[qvalid] GetConstraintFromTag Msg:gt and gt can't both set}
             err:2 --> &{Field:[qvalid] GetConstraintFromTag Msg:bound limit and 'in' can't both set}
-
+            err:3 --> &{Field:[qvalid] GetConstraintFromTag Msg:upper and lower bound limit illegal}
+            
 ```
 
 for more details, see example dir.
 
 ## TODO:
-1. check loop pointer check
+1. check pointer loop
 2. customized field validator
