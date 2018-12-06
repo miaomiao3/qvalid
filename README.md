@@ -22,7 +22,7 @@ go get -u github.com/miaomiao3/qvalid
 2. If 'in' was set, do not set bound limit  
 3. Comma `'` was reserved except of `in` property
 
-|prpp|des|comment|
+|constraint|description|comment|
 |---|---|---|
 |lt|little than, upper bound limit | u can set lt **or** lte!  |
 |lte|little than or equal, upper bound limit| u can set lt **or** lte!  |
@@ -76,6 +76,7 @@ type BadTag struct {
 	Err1 string `valid:"lt=10, lte=1"`            // this will cause [qvalid] error msg
 	Err2 string `valid:"gt=10, gte=1"`            // this will cause [qvalid] error msg
 	Err3 string `valid:"lt=10, gt=1, in=[aa,bb]"` // this will cause [qvalid] error msg
+	Err4 string `valid:"lt=1, gte=1"`             // this will cause [qvalid] error msg
 }
 
 type FakeFood struct {
