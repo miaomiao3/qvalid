@@ -180,14 +180,6 @@ validateEmbedStruct
 
     legal input and result:
         isPass:true
-validateSliceEmbedStruct
-    illegal input and result:
-        isPass:false
-        validErrors:
-            err:0 --> &{Field:.Leafs[0].name Msg:value: not in:[rose tulip]}
-
-    legal input and result:
-        isPass:true
         
 ```
 
