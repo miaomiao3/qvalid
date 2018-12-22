@@ -1,14 +1,14 @@
 ## qvalid
-mini and helpful tool to validate struct's exported fields
+powerful tool to validate struct's exported fields
 
 
-## Feature
-1. validate field value of numbers(int/uint/float...)
-2. validate field length of string/array/slice/map
-3. support **in** check
-4. when a field is slice and its element is struct/struct_pointer, qvalid auto validate this struct related element
-5. when a field is string, support attribute check. e.g. email/ip/email... 
-6. pretty field output msg, use json tag first as field name
+## Features
+- validate field value of numbers(int/uint/float...)
+- validate field length of string/array/slice/map
+- support **in** check
+- when a field is slice and its element is struct/struct_pointer, qvalid auto validate this struct related element
+- when a field is string, support attribute check. e.g. email/ip/email... 
+- pretty field output msg, use json tag first as field name
 
 ## Install
 `
@@ -17,11 +17,13 @@ go get -u github.com/miaomiao3/qvalid
 
 ## Syntax
 
-### rule 
-1. As for bound limit, it means length of string/array/slice/map, and value of numbers(int/uint/float...)
-2. If 'in' was set, do not set bound limit  
-3. Comma `'` was reserved except of `in` property
 
+- As for bound limit, it means length of string/array/slice/map, and value of numbers(int/uint/float...)
+- If 'in' was set, do not set bound limit  
+- `,` and `=`  reserved
+- `[` and `]` reserved except of `in` constraint
+
+### constraint description
 |constraint|description|comment|
 |---|---|---|
 |lt|little than, upper bound limit | u can set lt **or** lte!  |
@@ -29,10 +31,11 @@ go get -u github.com/miaomiao3/qvalid
 |gt|greater than, lower bound limit| u can set gt **or** gte!  |
 |gte|greater than or equal, lower bound limit| u can set gt **or** gte!  |
 |in|must in one of the list item. item character must be numeric or alpha|If 'in' was set, do not set bound limit |
-|attr|when the field is string, it works to some known attribute like email, ip .etc|read code for more|
+|attr|when the field is string, it works to some known attribute like email, ip .etc|<a href="#attr">attr desc</a>|
 
 
-### supported string attrs as follows, read code more:
+### <span id="attr">`attr` is available as below</span>
+
 ```go
 const (
 	StringTypeEmail        = "email"

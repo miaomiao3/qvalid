@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"gopkg.in/yaml.v2"
 	"reflect"
-	"regexp"
 	"strings"
 )
 
@@ -230,11 +229,10 @@ type Constraint struct {
 	In     []string `yaml:"in"`
 	Prefix *string  `yaml:"prefix"`
 	Suffix *string  `yaml:"suffix"`
-	Regex  *string  `yaml:"regex"`
-	Attr   *string  `yaml:"attr"`
+	//Regex  *string  `yaml:"regex"`
+	Attr *string `yaml:"attr"`
 }
 
-var bracketMarkRegex = `\[[a-zA-Z1-9-, ]+\]`
 var bracketHolder = `bholder1xx`
 var yamlTag = `: `
 
@@ -242,24 +240,40 @@ var yamlTag = `: `
 func GetConstraintFromTag(tag string) (*Constraint, error) {
 	c := Constraint{}
 
+	transformData := tag
+	squareBracketContent := ""
 	// get square bracket content of 'in'
-	reg := regexp.MustCompile(bracketMarkRegex)
-	squareBracketContent := reg.FindString(tag)
+	tmpStrs1 := strings.Split(tag, "[")
+	tmpStrs2 := strings.Split(tag, "]")
 
-	transformData := strings.Replace(tag, squareBracketContent, bracketHolder, 1)
+	if len(tmpStrs1) != len(tmpStrs2) {
+		return nil, errors.New("bracket setting error")
+
+	}
+
+	if len(tmpStrs1) > 1 && len(tmpStrs2) > 1 {
+		if len(tmpStrs1) > 2 {
+			return nil, errors.New("bracket setting error, check repeat")
+		}
+
+		// join 2 part
+		transformData = tmpStrs1[0] + bracketHolder + tmpStrs2[1]
+		squareBracketContent = tag[len(tmpStrs1[0]) : len(tmpStrs2[0])+1]
+	}
 
 	transformDatas := strings.Split(transformData, ",")
 
+	// change to yaml format
 	trimTransformData := ""
 	for _, v := range transformDatas {
 		trimTransformData += strings.Trim(v, " ") + "\n"
 	}
+	trimTransformData = strings.Replace(trimTransformData, "=", yamlTag, -1)
 
 	// fill back
 	trimTransformData = strings.Replace(trimTransformData, bracketHolder, squareBracketContent, 1)
 
-	trimTransformData = strings.Replace(trimTransformData, "=", yamlTag, -1)
-
+	// deserialize
 	err := yaml.Unmarshal([]byte(trimTransformData), &c)
 
 	if c.Lte != nil && c.Lt != nil {
